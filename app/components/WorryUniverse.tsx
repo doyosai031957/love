@@ -252,6 +252,8 @@ export default function WorryUniverse({ user }: { user: User | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hasDragged = useRef(false);
+  const isSubmittingWorry = useRef(false);
+  const isSubmittingSolution = useRef(false);
   const mouseRef = useRef<{ x: number | null; y: number | null }>({
     x: null,
     y: null,
@@ -581,7 +583,18 @@ export default function WorryUniverse({ user }: { user: User | null }) {
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    setScale((prev) => Math.max(0.3, Math.min(2, prev - e.deltaY * 0.001)));
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+
+    setScale((prevScale) => {
+      const newScale = Math.max(0.3, Math.min(2, prevScale - e.deltaY * 0.001));
+      // Adjust offset so the world point under the cursor stays at the same screen position
+      setOffset((prevOffset) => ({
+        x: mouseX - ((mouseX - prevOffset.x) / prevScale) * newScale,
+        y: mouseY - ((mouseY - prevOffset.y) / prevScale) * newScale,
+      }));
+      return newScale;
+    });
   }, []);
 
   // Find a position that doesn't overlap with existing worries (including their solution orbits)
@@ -632,6 +645,9 @@ export default function WorryUniverse({ user }: { user: User | null }) {
 
   const addWorry = useCallback(async () => {
     if (!newWorryText.trim() || !currentUser) return;
+    if (isSubmittingWorry.current) return;
+    isSubmittingWorry.current = true;
+
     const viewCenterX = (window.innerWidth / 2 - offset.x) / scale;
     const viewCenterY = (window.innerHeight / 2 - offset.y) / scale;
     const newSize = 75 + Math.random() * 30;
@@ -661,7 +677,9 @@ export default function WorryUniverse({ user }: { user: User | null }) {
         setWorries((prev) => [...prev, data.worry]);
         socketRef.current?.emit("worry:created", data.worry);
       }
-    } catch { /* ignore */ }
+    } catch { /* ignore */ } finally {
+      isSubmittingWorry.current = false;
+    }
     setNewWorryText("");
     setShowAddForm(false);
   }, [newWorryText, offset, scale, findNonOverlappingPos, worries, currentUser]);
@@ -674,8 +692,11 @@ export default function WorryUniverse({ user }: { user: User | null }) {
   const addSolution = useCallback(
     async (worryId: string) => {
       if (!newSolutionText.trim() || !currentUser) return;
+      if (isSubmittingSolution.current) return;
+      isSubmittingSolution.current = true;
+
       const worry = worries.find((w) => w.id === worryId);
-      if (!worry?.dbId) return;
+      if (!worry?.dbId) { isSubmittingSolution.current = false; return; }
 
       try {
         const res = await fetch(`/api/worries/${worry.dbId}/solutions`, {
@@ -695,7 +716,9 @@ export default function WorryUniverse({ user }: { user: User | null }) {
           });
           socketRef.current?.emit("solution:created", { worryId, solution: data.solution });
         }
-      } catch { /* ignore */ }
+      } catch { /* ignore */ } finally {
+        isSubmittingSolution.current = false;
+      }
       setNewSolutionText("");
     },
     [newSolutionText, resolveOverlaps, worries, currentUser]
@@ -729,11 +752,17 @@ export default function WorryUniverse({ user }: { user: User | null }) {
 
   // Trigger PacMan eating animation for resolving a worry
   const handleResolveWorry = useCallback((worry: Worry) => {
-    // Calculate the worry's screen position
-    const pos = { x: worry.x, y: worry.y };
+    // Navigate viewport to center on the worry first
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const newOffsetX = centerX - worry.x * scale;
+    const newOffsetY = centerY - worry.y * scale;
+    setOffset({ x: newOffsetX, y: newOffsetY });
+
+    // Calculate screen position based on the new offset
     const fo = floatOffsets[worry.id] || { x: 0, y: 0 };
-    const screenX = (pos.x + fo.x) * scale + offset.x;
-    const screenY = (pos.y + fo.y) * scale + offset.y;
+    const screenX = (worry.x + fo.x) * scale + newOffsetX;
+    const screenY = (worry.y + fo.y) * scale + newOffsetY;
 
     setShowMyWorriesModal(false);
     setPacmanAnim({
@@ -744,7 +773,7 @@ export default function WorryUniverse({ user }: { user: User | null }) {
       worrySize: worry.size * scale,
     });
     socketRef.current?.emit("pacman:eating", { worryId: worry.id, dbId: worry.dbId });
-  }, [floatOffsets, scale, offset]);
+  }, [floatOffsets, scale]);
 
   // Get floating position for a worry
   const getFloatPos = (worry: Worry) => {
