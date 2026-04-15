@@ -13,7 +13,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
-    password TEXT NOT NULL,
+    password TEXT NOT NULL DEFAULT '',
+    kakao_id TEXT UNIQUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -42,5 +43,15 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
 `);
+
+// Migration: add kakao_id column if missing (for existing databases)
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN kakao_id TEXT UNIQUE`);
+} catch {
+  // Column already exists
+}
+
+// Migration: make password optional (for existing databases)
+// SQLite doesn't support ALTER COLUMN, but new rows will use DEFAULT ''
 
 export default db;

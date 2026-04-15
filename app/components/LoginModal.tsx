@@ -293,8 +293,7 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
                 color: "rgba(0, 0, 0, 0.85)",
               }}
               onClick={() => {
-                // TODO: 카카오 OAuth 연동
-                alert("카카오 로그인은 준비 중입니다");
+                window.location.href = "/api/auth/kakao";
               }}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
