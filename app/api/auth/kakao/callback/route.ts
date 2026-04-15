@@ -3,6 +3,7 @@ import db from "@/lib/db";
 import { createToken } from "@/lib/auth";
 
 const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID || "dba4871fd1420edecb5e60d6293c2ab0";
+const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET || "h3luTnc8szLkMJgC6n4T7cg7wyaWHDj8";
 
 interface KakaoTokenResponse {
   access_token: string;
@@ -51,6 +52,7 @@ export async function GET(request: Request) {
       body: new URLSearchParams({
         grant_type: "authorization_code",
         client_id: KAKAO_CLIENT_ID,
+        client_secret: KAKAO_CLIENT_SECRET,
         redirect_uri: redirectUri,
         code,
       }),
