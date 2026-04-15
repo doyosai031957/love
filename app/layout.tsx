@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "love",
-  description: "love for everyone",
+  title: "고민 우주",
+  description: "우주에 고민을 띄우고, 서로 해결책을 나눠보세요",
 };
 
 export default function RootLayout({
