@@ -56,11 +56,13 @@ export async function GET(request: Request) {
       }),
     });
 
+    const tokenText = await tokenRes.text();
     if (!tokenRes.ok) {
-      return NextResponse.redirect(`${origin}/?login_error=카카오 인증에 실패했습니다`);
+      console.error("Kakao token error:", tokenText);
+      return NextResponse.redirect(`${origin}/?login_error=${encodeURIComponent(tokenText)}`);
     }
 
-    const tokenData: KakaoTokenResponse = await tokenRes.json();
+    const tokenData: KakaoTokenResponse = JSON.parse(tokenText);
 
     // 2. Get user info
     const userRes = await fetch("https://kapi.kakao.com/v2/user/me", {
