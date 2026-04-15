@@ -46,12 +46,16 @@ db.exec(`
 
 // Migration: add kakao_id column if missing (for existing databases)
 try {
-  db.exec(`ALTER TABLE users ADD COLUMN kakao_id TEXT UNIQUE`);
+  db.exec(`ALTER TABLE users ADD COLUMN kakao_id TEXT`);
 } catch {
   // Column already exists
 }
 
-// Migration: make password optional (for existing databases)
-// SQLite doesn't support ALTER COLUMN, but new rows will use DEFAULT ''
+// Create unique index on kakao_id if not exists
+try {
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_kakao_id ON users(kakao_id)`);
+} catch {
+  // Index already exists
+}
 
 export default db;

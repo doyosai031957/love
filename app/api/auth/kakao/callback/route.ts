@@ -110,7 +110,9 @@ export async function GET(request: Request) {
       path: "/",
     });
     return response;
-  } catch {
-    return NextResponse.redirect(`${origin}/?login_error=카카오 로그인 중 오류가 발생했습니다`);
+  } catch (err) {
+    console.error("Kakao login error:", err);
+    const msg = err instanceof Error ? err.message : "unknown";
+    return NextResponse.redirect(`${origin}/?login_error=${encodeURIComponent(msg)}`);
   }
 }
