@@ -552,6 +552,7 @@ export default function WorryUniverse({ user }: { user: User | null }) {
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      if (pacmanAnim) return;
       if (
         (e.target as HTMLElement).closest(
           ".worry-node, .solution-node, .add-form, .solution-panel"
@@ -562,7 +563,7 @@ export default function WorryUniverse({ user }: { user: User | null }) {
       hasDragged.current = false;
       setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
     },
-    [offset]
+    [offset, pacmanAnim]
   );
 
   const handleMouseMove = useCallback(
