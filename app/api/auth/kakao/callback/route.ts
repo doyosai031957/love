@@ -24,8 +24,16 @@ interface UserRow {
   name: string;
 }
 
+function getOrigin(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-proto");
+  const host = request.headers.get("host") || "localhost:3000";
+  const protocol = forwarded || (host.includes("localhost") ? "http" : "https");
+  return `${protocol}://${host}`;
+}
+
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = getOrigin(request);
   const code = searchParams.get("code");
   const error = searchParams.get("error");
 
@@ -95,7 +103,7 @@ export async function GET(request: Request) {
     const token = await createToken(user.id);
     await setAuthCookie(token);
 
-    return NextResponse.redirect(origin);
+    return NextResponse.redirect(`${origin}/`);
   } catch {
     return NextResponse.redirect(`${origin}/?login_error=카카오 로그인 중 오류가 발생했습니다`);
   }
