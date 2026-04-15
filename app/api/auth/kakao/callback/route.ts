@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import db from "@/lib/db";
 import { createToken, setAuthCookie } from "@/lib/auth";
 
-const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID || "h3luTnc8szLkMJgC6n4T7cg7wyaWHDj8";
+const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID || "dba4871fd1420edecb5e60d6293c2ab0";
 
 interface KakaoTokenResponse {
   access_token: string;
