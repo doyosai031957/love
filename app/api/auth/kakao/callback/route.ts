@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
-import { createToken, setAuthCookie } from "@/lib/auth";
+import { createToken } from "@/lib/auth";
 
 const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID || "dba4871fd1420edecb5e60d6293c2ab0";
 
@@ -101,9 +101,15 @@ export async function GET(request: Request) {
 
     // 4. Set JWT cookie and redirect
     const token = await createToken(user.id);
-    await setAuthCookie(token);
-
-    return NextResponse.redirect(`${origin}/`);
+    const response = NextResponse.redirect(`${origin}/`);
+    response.cookies.set("auth-token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+    return response;
   } catch {
     return NextResponse.redirect(`${origin}/?login_error=카카오 로그인 중 오류가 발생했습니다`);
   }
